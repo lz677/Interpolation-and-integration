@@ -26,6 +26,9 @@ class Integration(object):
         # # 拉格朗日
         # 拉格朗日等节点插值积分项
         self.L_A_k = np.zeros(self.nodes_num)
+        self.L_A_k_poly = [1 for i in range(self.nodes_num)]
+        self.L_A_k_a = [1 for i in range(self.nodes_num)]
+        self.L_A_k_b = [1 for i in range(self.nodes_num)]
         self.L_A_k_sum = 0
         self.L_I_n = 0  # 积分
 
@@ -39,10 +42,19 @@ class Integration(object):
         # # newton-cotes
         self.C_k = np.zeros(self.nodes_num)
         self.nc_I_n = 0
+        self.nc_I_n_poly = 0
+
+        self.a = sp.Symbol('a')
+        self.b = sp.Symbol('b')
 
     def lagrange(self, l_k, x, L_n, f):
         # 求解 A_k I_n 属于理论推导部分
         for i in range(self.nodes_num):
+
+            self.L_A_k_a[i] = sp.integrate(l_k[i]).subs(x, self.a)
+            self.L_A_k_b[i] = sp.integrate(l_k[i]).subs(x, self.b)
+            self.L_A_k_poly[i] = self.L_A_k_b[i] - self.L_A_k_a[i]
+            # print(self.L_A_k_poly[i])
             self.L_A_k[i] = sp.integrate(l_k[i], (x, -1, 1))
             self.L_A_k_sum += self.L_A_k[i]
             self.L_I_n += self.L_A_k[i] * self.y[i]
@@ -75,7 +87,6 @@ class Integration(object):
             self.nc_I_n += 2 * self.C_k[k] * self.y[k]
         #     print(nc[k])
         # print('*' * 100)
-        pass
 
     def __degree_of_precision(self, A_k, m=0) -> int:
         """

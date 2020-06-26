@@ -37,6 +37,7 @@ class Polynomials(object):
         self.P_n = 0
         # 插值表初始化
         self.v = np.zeros((self.nodes_num, self.nodes_num))
+        self.p_np = 0
 
         # 多段线性初始化多项式
         self.i_h = [0] * self.n  # 每一段的多项式函数
@@ -58,6 +59,8 @@ class Polynomials(object):
             for i in range(self.nodes_num):
                 if i != k:
                     self.l_k[k] = self.l_k[k] * (x - self.x[i]) / (self.x[k] - self.x[i])
+        #     print(sp.latex(sp.N(sp.expand(self.l_k[k]),6)))
+        # print('*'*100)
         # 拉格朗日多项式Ln(x) 以及 w_n+1
         for k in range(self.nodes_num):
             self.L_n += self.y[k] * self.l_k[k]
@@ -80,9 +83,16 @@ class Polynomials(object):
 
         # 将系数赋值给系数数组
         for i in range(self.nodes_num):
-            # print(v[:, i])
+            np.set_printoptions(formatter={'float': '{: 0.3f}'.format})
+            # print(self.v[:, i])
             self.coefficients[i] = self.v[0, i]
+        # print('*****插商表*****:')
 
+        # np.set_printoptions(precision=6, suppress=True)
+
+        # with open('./chashangbiao.txt', 'a+') as f:
+        #     f.write(self.v)
+        # print(self.v)
         # 定义自变量
         for i in range(self.nodes_num):
             p_i = 1
@@ -90,6 +100,7 @@ class Polynomials(object):
                 p_i *= x - self.x[j]
 
             self.P_n += self.coefficients[i] * p_i
+        self.p_np = sp.lambdify(x, self.P_n, "numpy")
 
     def linear(self, x):
         """
