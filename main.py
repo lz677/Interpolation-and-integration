@@ -50,14 +50,52 @@ kexi = sp.Symbol(r'\eta')
 # print(sp.latex(sp.diff(sp.diff(sp.diff(f))).subs(x, kexi)))
 # print(sp.latex(sp.diff(sp.diff(sp.diff(sp.diff(sp.diff(sp.diff(f)))))).subs(x, kexi)))
 # print(sp.latex(sp.diff(sp.diff(sp.diff(sp.diff(f)))).subs(x, kexi)))
-print('x_k_C')
-print(x_k_c)
-print('y_k_C')
-print(y_k_c)
+# print('x_k_C')
+# print(x_k_c)
+# print('y_k_C')
+# print(y_k_c)
+# for i in range(5):
+#     print('$%d$ & $%.1f$ & $%.6f$ & $%.6f$ & $%d$ & $%.1f$ & $%.6f$ & $%.6f$ \\\\' % (
+#     i, x_k[i], y_k[i], y_k_diff[i], i + 6, x_k[i + 6], y_k[i + 6], y_k_diff[i + 6]))
+# print('$%d$ & $%.1f$ & $%.6f$ & $%.6f$ & & &  & \\\\' % (
+#     5, x_k[5], y_k[5], y_k_diff[5]))
+# f_d2 = sp.diff(sp.diff(f))
+# f_d3 = sp.diff(f_d2)
+# f_d4 = sp.diff(f_d3)
+# f_d5 = sp.diff(f_d4)
+# print(sp.latex(f_d4))
+# print(sp.latex(f_d5))
+# print(sp.latex(sp.solve(f_d5,x)))
+# sp.plot(f_d2, (x, -1, 1))
+# sp.plot(f_d3, (x, -1, 1))
 la_debug = 0
 new_debug = 0
-linear_print_plot = 1
-hermitr_print_plot = 0
+linear_debug = 0
+hermite_debug = 0
+Gauss_debug = 0
+
+
+def calc_cotes(n_=10, is_print=False):
+    """
+    打印科特斯系数
+    :param is_print:
+    :param n_:
+    :return:
+    """
+    t = sp.Symbol('t')
+    omega = 1
+    n_ = sp.Integer(n_)
+    for j in range(n_ + 1):
+        omega *= (t - j)
+    cotes = []
+    for k in range(n_ + 1):
+        k = sp.Integer(k)
+        _ = (-1) ** (n_ - k) / (n_ * math.factorial(k)) / math.factorial(n_ - k) * sp.integrate(omega / (t - k),
+                                                                                                (t, 0, n_))
+        cotes.append(_)
+        if is_print:
+            print('$ ' + sp.latex(_) + ' $', end=' & ')
+    return cotes
 
 
 def main(is_plot=False):
@@ -65,11 +103,11 @@ def main(is_plot=False):
     # 等节点
     poly = polynomials.Polynomials(n, x_k, y_k, y_k_diff)
     er = error.InterpolationError(n, x_k, y_k, y_k_diff)
-    ing = integration.Integration(n, x_k, y_k)
-    # 切比雪夫零点
+    ing = integration.Integration(n, x_k, y_k, y_k_diff)
+    # # 切比雪夫零点
     poly_c = polynomials.Polynomials(n, x_k_c, y_k_c, y_k_diff)
     er_c = error.InterpolationError(n, x_k_c, y_k_c, y_k_diff)
-    ing_c = integration.Integration(n, x_k_c, y_k_c)
+    ing_c = integration.Integration(n, x_k_c, y_k_c, y_k_diff)
 
     if la_debug:
         # # 拉格朗日等节点插值多项式
@@ -79,7 +117,7 @@ def main(is_plot=False):
         lagrange_e_r_n = f - poly.L_n
         # 估计误差 无穷范数和最大值范数
         er.error_lagrange(0.95, x, lagrange_e_r_n, w=poly.w)
-        if 0:
+        if is_plot:
             # sp.plot(lagrange_e_r_n, (x, -1, 1))
             # sp.plot(sp.diff(lagrange_e_r_n), (x, -1, 1), title=r"$R_n\'$")
             # for i in range(nodes):
@@ -91,6 +129,14 @@ def main(is_plot=False):
             for i in range(nodes):
                 f_d = sp.diff(f_d)
             print('插值余项')
+            # lagrange_e_r_n_np_d = sp.lambdify(x, sp.diff(lagrange_e_r_n), "numpy")(x_np)
+            # lagrange_e_r_n_np = sp.lambdify(x, lagrange_e_r_n, "numpy")(x_np)
+            # plot_figures.num_plot(x_np, lagrange_e_r_n_np, path="C:\\Users\\93715\\Desktop\\数值分析期末大作业\\figure\\larn.svg",
+            #                       x_label=r'$x$',
+            #                       y_label=r'$R_n(x)$', title='拉格朗日插值余项', is_show=True,)
+            # plot_figures.num_plot(x_np, lagrange_e_r_n_np_d, path="C:\\Users\\93715\\Desktop\\数值分析期末大作业\\figure\\larnd.svg",
+            #                       x_label=r'$x$',
+            #                       y_label=r'$R’_n(x)$', title='拉格朗日插值余项导数', is_show=True, )
             # print(sp.latex(sp.N(f_d, 6)))
             # print(sp.latex(sp.N(f_d.subs(x, kexi), 6)))
             # print(sp.latex(sp.N(sp.diff(f_d.subs(x, sp.Symbol('\eta'))), 6)))
@@ -104,11 +150,11 @@ def main(is_plot=False):
             print('拉格朗日等节点插值余项最大范数:', er.L_max_nor_acc)
             print('拉格朗日等节点插值余项2范数:', er.L_2_nor)
 
-
             print('*' * 100)
         # 积分
         ing.lagrange(poly.l_k, x, poly.L_n, f)
-        if 0:
+        if is_plot:
+            ing.newton_cotes()
             # for i in range(n + 1):
             # print(sp.latex(sp.N(sp.expand(poly.l_k[i]), 5)))
             # print(sp.latex(sp.N(sp.expand(sp.integrate(poly.l_k[i])), 5)))
@@ -130,7 +176,7 @@ def main(is_plot=False):
         la_c_r_n = f - poly_c.L_n
         # 估计误差 无穷范数和最大值范数
         er_c.error_lagrange(0.3, x, la_c_r_n, w=poly.w, is_print=False)
-        if is_plot:
+        if 0:
             # sp.plot(r_n**2, (x, -1, 1), title=r'$Lagrange polynomials\' error$')
 
             np.set_printoptions(formatter={'float': '{: 0.4f}'.format})
@@ -164,7 +210,7 @@ def main(is_plot=False):
             print('*' * 100)
         # 积分
         ing_c.lagrange(poly_c.l_k, x, poly_c.L_n, f)
-        if is_plot:
+        if 0:
             L_n_np = sp.lambdify(x, poly_c.L_n, "numpy")(x_np)
             # print(p_n_np)
             # print(f_np)
@@ -240,12 +286,35 @@ def main(is_plot=False):
             print('牛顿切比雪夫插值余项插值余项：2范数', er_c.L_2_nor)
             print("*" * 100)
 
-    # 分段线性插值
-    poly.linear(x)
-    
+    if linear_debug:
+        # 分段线性插值
+        poly.linear(x)
+        print(sp.latex(sp.N(poly.I_n, 6)))
+        if is_plot:
+            ing.linear()
+            print("线性插值函数积分：", ing.T_n)
+        #     I_n_np = sp.lambdify(x, poly.I_n, "numpy")(x_np)
+        #     plot_figures.num_plot(x_np, f_np, I_n_np,
+        #                           path="C:\\Users\\93715\\Desktop\\数值分析期末大作业\\figure\\LinearandF.svg",
+        #                           x_label=r'$x$',
+        #                           y_label=r'$f(x),I_n(x)$', title='原函数与分段线性插值函数', is_show=True,
+        #                           label=[r'$Primitive\ Function$', r'$Linear\ Splines$'])
+    if hermite_debug:
+        # Hermite插值
+        poly.hermite(x)
+        if is_plot:
+            ing.hermite()
+            print("线性插值函数积分：", ing.H_T_n)
+            I_n_np = sp.lambdify(x, poly.H_I_n, "numpy")(x_np)
+            plot_figures.num_plot(x_np, f_np, I_n_np,
+                                  path="C:\\Users\\93715\\Desktop\\数值分析期末大作业\\figure\\HandF2.svg",
+                                  x_label=r'$x$',
+                                  y_label=r'$f(x),I_n(x)$', title='原函数与分段Hermite插值函数', is_show=True,
+                                  label=[r'$Primitive\ Function$', r'$Hermite\ Splines$'])
 
-    # # Herimite插值
-    # poly.hermite(x)
+    if Gauss_debug:
+        ing.gauss(x)
+        print("高斯积分：", ing.G_T_n)
 
     # if is_plot:
     #     if la_debug:
@@ -276,3 +345,27 @@ def main(is_plot=False):
 
 if __name__ == '__main__':
     main(True)
+    cotes = calc_cotes(is_print=False)
+    a = sp.symbols("a")
+    b = sp.symbols("b")
+    K = 0
+
+    # for i in range(nodes):
+    #     K += cotes[i] * (a + (b - a) / n * i) ** 12
+    # f = (b ** 13 - a ** 13) / sp.Integer(13) - (b - a) * K
+    # print(136500000000 * sp.apart(f, a) / 26927 )
+    # print('ss')
+    # print(sp.expand(f))
+    # print(f.subs({a: -1, b: 1})/math.factorial(12))
+    # print(-26927/7981410937500000)
+    # # print(164924164/533203125)
+    # # print(sp.simplify(sp.expand(f)))
+    # # a = sp.Integer(0)
+    # # x_k_f = [1/26,1,1,1,1,1,1,1,1,1,1]
+    # sum_k = 0
+    # for i in range(nodes):
+    #     # sum_k += sp.Integer(2) * cotes[i] * sp.Integer(x_k[i]) ** 12
+    #     sum_k += 2 * cotes[i] * x_k[i] ** 12
+    # print("a", (sp.Integer(2)/sp.Integer(13)-sum_k)/sp.Integer(math.factorial(12)))
+    # print(2**13*26927/136500000000/math.factorial(12))
+    # print(26927/136500000000*2/math.factorial(12))

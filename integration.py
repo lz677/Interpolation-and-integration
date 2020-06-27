@@ -15,13 +15,13 @@ import math
 
 
 class Integration(object):
-    def __init__(self, n: int, x: np.ndarray, y: np.ndarray):
+    def __init__(self, n: int, x: np.ndarray, y: np.ndarray, y_diff: np.ndarray):
         # 初始化插值点
         self.n = n
         self.nodes_num = self.n + 1  # 插值节点数
         self.x = x  # 插值节点
         self.y = y  # 插值节点对应的y值
-        # self.y_diff = y_diff  # 插值节点的导数值
+        self.y_diff = y_diff  # 插值节点的导数值
 
         # # 拉格朗日
         # 拉格朗日等节点插值积分项
@@ -47,10 +47,23 @@ class Integration(object):
         self.a = sp.Symbol('a')
         self.b = sp.Symbol('b')
 
+        # 分段线性插值
+        self.h = 2 / self.n
+        self.T_n = 0
+
+        # hermite
+        self.H_T_n = 0
+
+        # Gauss
+        self.xk1 = np.zeros(self.nodes_num)
+        self.xk2 = np.zeros(self.nodes_num)
+        self.yk1 = np.zeros(self.nodes_num)
+        self.yk2 = np.zeros(self.nodes_num)
+        self.G_T_n = 0
+
     def lagrange(self, l_k, x, L_n, f):
         # 求解 A_k I_n 属于理论推导部分
         for i in range(self.nodes_num):
-
             self.L_A_k_a[i] = sp.integrate(l_k[i]).subs(x, self.a)
             self.L_A_k_b[i] = sp.integrate(l_k[i]).subs(x, self.b)
             self.L_A_k_poly[i] = self.L_A_k_b[i] - self.L_A_k_a[i]
@@ -82,11 +95,35 @@ class Integration(object):
             for j in range(self.nodes_num):
                 if j != k:
                     nc[k] *= t - j
-            self.C_k[k] = (-1) ** (self.n - k) / (
-                    self.n * math.factorial(k) * math.factorial(self.n - k)) * sp.integrate(nc[k], (t, 0, 10))
+            self.C_k[k] = (-1) ** (sp.Integer(self.n - k)) / (
+                    self.n * math.factorial(sp.Integer(k)) * math.factorial(sp.Integer(self.n - k))) * sp.integrate(nc[k], (t, sp.Integer(0), sp.Integer(10)))
+            print("k:", self.C_k[k])
             self.nc_I_n += 2 * self.C_k[k] * self.y[k]
+
         #     print(nc[k])
         # print('*' * 100)
+
+    def linear(self):
+        # 梯形积分 T_n = h/2*[f(a)+2*sum f(x_k)+f(b)] k = 1,2,...,n-1
+        for k in range(1, self.n):
+            self.T_n += 2 * self.y[k]
+        self.T_n = self.h / 2 * (self.y[0] + self.T_n + self.y[self.n])
+
+    def hermite(self):
+        for k in range(1, self.n):
+            self.H_T_n += 2 * self.y[k]
+        self.H_T_n = self.h / 2 * (self.y[0] + self.H_T_n + self.y[self.n]) + self.h ** 2 / 12 * (
+                self.y_diff[0] - self.y_diff[self.n])
+
+    def gauss(self, x):
+        for i in range(self.n):
+            self.xk1[i] = -sp.sqrt(3) / 30 + (self.x[i] + self.x[i + 1]) / 2
+            self.xk2[i] = sp.sqrt(3) / 30 + (self.x[i] + self.x[i + 1]) / 2
+            self.yk1[i] = 1 / (1 + 25 * x ** 2).subs(x, self.xk1[i])
+            self.yk2[i] = 1 / (1 + 25 * x ** 2).subs(x, self.xk2[i])
+            self.G_T_n += 1 / 10 * (self.yk1[i] + self.yk2[i])
+            # print('$%d$ & $%.1f$ & $%.1f$ & $%.6f$ & $%.6f$ & $%.6f$ & $%.6f$ \\\\' % (
+            # i, self.x[i], self.x[i + 1], self.xk1[i], self.xk2[i], self.yk1[i], self.yk2[i]))
 
     def __degree_of_precision(self, A_k, m=0) -> int:
         """

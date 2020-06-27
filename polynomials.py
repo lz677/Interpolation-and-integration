@@ -142,6 +142,7 @@ class Polynomials(object):
                                  k] +
                              ((x - self.x[k]) / (self.x[k + 1] - self.x[k])) ** 2 *
                              (x - self.x[k + 1]) * self.y_diff[k + 1])
+            # print("~~"+sp.latex(sp.N(sp.expand(self.h_i_h[k]), 6)) + "\qquad & %.1f \\leq x < %1.f \\\\" % (self.x[k], self.x[k + 1]))
             # 多项式
             self.H_I_n = sp.Piecewise((self.h_i_h[0], x < self.x[1]), (self.h_i_h[1], x < self.x[2]),
                                       (self.h_i_h[2], x < self.x[3]), (self.h_i_h[3], x < self.x[4]),
